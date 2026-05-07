@@ -1,7 +1,9 @@
-# Documentation: only root README.md and developer.md are tracked
+# Documentation: only root README.md, developer.md, and example KB packs are tracked
 *.md
 !/README.md
 !/developer.md
+!/examples/*/kb/
+!/examples/*/kb/*.md
 
 # Other prose/document formats
 *.txt
@@ -16,9 +18,15 @@
 *.out
 *.prof
 *.bench
-# Compiled example binaries (Go puts the binary at examples/<name>/<name>)
+# Compiled example binaries. `go build ./examples/<name>/` puts the binary
+# in the current dir — could be the example dir or the repo root depending
+# on where you invoked it. Cover both.
 /examples/*/[a-z]*-agent
 /examples/minimal/minimal
+/data-agent
+/lta-agent
+/minimal
+/support-agent
 
 # Editor / OS
 .DS_Store
