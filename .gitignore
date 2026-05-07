@@ -1,6 +1,7 @@
-# Documentation: only root README.md is tracked
+# Documentation: only root README.md and developer.md are tracked
 *.md
 !/README.md
+!/developer.md
 
 # Other prose/document formats
 *.txt
@@ -15,6 +16,9 @@
 *.out
 *.prof
 *.bench
+# Compiled example binaries (Go puts the binary at examples/<name>/<name>)
+/examples/*/[a-z]*-agent
+/examples/minimal/minimal
 
 # Editor / OS
 .DS_Store
