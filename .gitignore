@@ -1,0 +1,28 @@
+# Documentation: only root README.md is tracked
+*.md
+!/README.md
+
+# Other prose/document formats
+*.txt
+*.rst
+*.adoc
+*.pdf
+*.docx
+
+# Go build artifacts
+*.exe
+*.test
+*.out
+*.prof
+*.bench
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Env
+.env
+.env.local
