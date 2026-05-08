@@ -1,4 +1,4 @@
-# harness
+# Harness
 
 A reusable Go agentic platform for building LLM agents. Implements the
 streaming agent loop, tool registry, session storage, compaction, and
