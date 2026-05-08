@@ -8,19 +8,77 @@ concrete tools, BYO provider clients, BYO memory/knowledge-graph plugins.
 > **Status: v0.1.0.** First tagged release. The `runtime` API
 > surface may still shift in the v0.x line — pin your version.
 
-## Why harness
+## Why Harness
 
-If you're building an LLM agent in Go and you find yourself writing
-the same things over and over — a streaming think-act loop, parallel
-tool dispatch, prompt-cache-stable request building, summarize-and-
-splice context compaction, JSONL session storage, MCP-server glue —
-that's what harness is. It's the substrate. You bring the tools, the
-prompts, and the binary; it brings the loop.
+If you're building an LLM agent in Go, you'll find yourself rewriting
+the same substrate over and over: a streaming think-act loop,
+parallel tool dispatch, prompt-cache-stable request building,
+summarize-and-splice context compaction, JSONL session storage,
+MCP-server glue. **That substrate is what Harness is.**
 
-It is **not** a CLI, a UI, an agent product, or a framework with
+It treats the runtime — the orchestration / context / execution
+layer — as the strategic infrastructure, not as plumbing to be
+hidden behind a DSL or a graph builder. You own the loop you ship.
+You can read every line.
+
+It is **not** a CLI, a UI, a hosted runtime, or a framework with
 opinions about how your agents should be deployed. There is no
 `harness` binary. You import packages, compose a `Runtime`, and call
 `rt.Run(ctx, msg, nil)`.
+
+## What Harness is for
+
+Harness is well-suited to:
+
+- **Coding agents** — terminal-integrated, IDE-adjacent, or
+  repo-rooted assistants that read and write files, run shells, and
+  call tools across many turns.
+- **Infrastructure-automation agents** — agents that drive cloud
+  APIs, internal tooling, or operational workflows where Go's
+  deployment story (static binary, low memory, embeddable in
+  existing services) is a real win.
+- **Long-running autonomous loops** — daemons, cron-driven runners,
+  multi-day tasks. The streaming loop, compaction, and JSONL
+  session resume cover the substrate.
+- **Local-first agents** — anything that needs to ship as a single
+  binary, run without a Python interpreter, or embed inside another
+  Go service.
+- **Tool-heavy agents** — agents whose value comes from many tools
+  (custom + MCP servers + skills), not from elaborate workflow
+  logic.
+- **Developer-tooling agents** — internal CLIs, build assistants,
+  code-review bots, log-triage agents — where a small dependency
+  tree and predictable runtime matter.
+
+The operational profile of Go matters here: static binaries,
+low memory footprint, native concurrency primitives, and the
+ability to embed the agent inside a service you already own. Harness
+leans into all of these.
+
+## When Harness is the wrong fit
+
+Harness deliberately doesn't try to be a graph orchestrator, a
+multi-role agent crew, a RAG-first knowledge platform, or a
+notebook-style experimentation toolkit. If your problem is one of
+these, you'll be fighting the grain:
+
+- **Visual or declarative workflows** — agents whose value comes
+  from inspectable graphs of explicit steps with branching, joins,
+  checkpointing, and human-in-the-loop pauses.
+- **Role-based multi-agent crews** — "researcher / writer /
+  reviewer" decompositions where the framework's main value is
+  coordinating personas.
+- **RAG-first products** — anything where the bulk of the work is
+  document ingest, chunking, embedding, indexing, and retrieval.
+  Harness has no opinion about your knowledge layer.
+- **Notebook / research workflows** — fast iteration in a Python
+  notebook with the latest open-source ML libraries arriving daily.
+- **Heavily regulated enterprise orchestration** — workflows that
+  need replayability, RBAC, governance dashboards, and visual
+  compliance views as first-class.
+
+You can build any of these on top of Harness, but you'd be writing
+a lot. The package is optimized for the use cases above, not these.
 
 ## Requirements
 
@@ -252,11 +310,8 @@ Deliberately not in scope (numbers from the same conceptual list):
   Adding a fifth is implementing `llm.Provider` (~300 LOC).
 
 See [`developer.md`](./developer.md) for a step-by-step guide to
-building agents on top of harness, including diagrams of the
-composition surface and the per-Run loop. See
-[`comparison.md`](./comparison.md) for how Harness compares with
-LangGraph, CrewAI, AutoGen, Semantic Kernel, OpenAI / Claude Agent
-SDKs, eino, and the rest of the agent-framework landscape.
+building agents on top of Harness, including diagrams of the
+composition surface and the per-Run loop.
 
 ## Non-goals
 
