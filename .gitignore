@@ -1,7 +1,8 @@
-# Documentation: only root README.md, developer.md, and example KB packs are tracked
+# Documentation: only root README.md, developer.md, comparison.md, and example KB packs are tracked
 *.md
 !/README.md
 !/developer.md
+!/comparison.md
 !/examples/*/kb/
 !/examples/*/kb/*.md
 

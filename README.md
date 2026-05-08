@@ -253,7 +253,10 @@ Deliberately not in scope (numbers from the same conceptual list):
 
 See [`developer.md`](./developer.md) for a step-by-step guide to
 building agents on top of harness, including diagrams of the
-composition surface and the per-Run loop.
+composition surface and the per-Run loop. See
+[`comparison.md`](./comparison.md) for how Harness compares with
+LangGraph, CrewAI, AutoGen, Semantic Kernel, OpenAI / Claude Agent
+SDKs, eino, and the rest of the agent-framework landscape.
 
 ## Non-goals
 
