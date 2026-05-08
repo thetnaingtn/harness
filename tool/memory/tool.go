@@ -13,6 +13,13 @@ import (
 // or write memory entries. Wraps any MemoryStore; the default JSONL
 // implementation is in tool/memory/jsonl/.
 //
+// Five actions are dispatched on the "action" field:
+//   - save:   create a new entry (id auto-generated when omitted)
+//   - update: replace an existing entry's content (assigns a fresh id)
+//   - remove: tombstone an entry (idempotent for unknown ids)
+//   - list:   return all entries as a JSON array, optionally tag-filtered
+//   - get:    return one entry as a JSON object by id
+//
 // Schema is one tool with an "action" enum rather than five separate
 // tools, to keep the request prefix small (less schema bloat -> better
 // prompt-cache hits).
@@ -25,7 +32,7 @@ func (t *MemoryTool) Name() string { return "memory" }
 
 // Description is shown to the model in the tool list.
 func (t *MemoryTool) Description() string {
-	return "Save, update, remove, or list memory entries — durable facts " +
+	return "Save, update, remove, list, or get memory entries — durable facts " +
 		"and preferences that survive across sessions. Use to capture user " +
 		"preferences, project context, or workflow conventions worth " +
 		"remembering."

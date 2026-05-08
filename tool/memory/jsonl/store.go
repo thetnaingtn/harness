@@ -34,6 +34,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -336,6 +337,15 @@ func (s *Store) Compact(_ context.Context) error {
 	if err := os.Rename(tmp, s.path); err != nil {
 		os.Remove(tmp)
 		return fmt.Errorf("rename: %w", err)
+	}
+	// Fsync the parent directory so the rename is durable across crashes.
+	// On Linux, an unfsync'd directory metadata change can be rolled back
+	// after a power loss even though the rename(2) syscall succeeded.
+	// On Windows, opening a directory like this isn't supported; ignore
+	// the error there since flock is also a no-op.
+	if dir, err := os.Open(filepath.Dir(s.path)); err == nil {
+		_ = dir.Sync()
+		_ = dir.Close()
 	}
 	return nil
 }

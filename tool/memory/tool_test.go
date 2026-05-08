@@ -3,6 +3,8 @@ package memory
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -17,9 +19,9 @@ func TestMemoryTool_NameDescriptionSchema(t *testing.T) {
 	assert.NotEmpty(t, tool.Description())
 
 	var schema struct {
-		Type       string                 `json:"type"`
-		Properties map[string]interface{} `json:"properties"`
-		Required   []string               `json:"required"`
+		Type       string         `json:"type"`
+		Properties map[string]any `json:"properties"`
+		Required   []string       `json:"required"`
 	}
 	require.NoError(t, json.Unmarshal(tool.Parameters(), &schema))
 	assert.Equal(t, "object", schema.Type)
@@ -39,6 +41,7 @@ func TestMemoryTool_IsConcurrencySafeFalse(t *testing.T) {
 type fakeStore struct {
 	entries []Entry
 	failOn  string // method name to fail on, e.g. "Save"
+	nextID  int    // auto-incremented for empty-id Save calls
 }
 
 func (f *fakeStore) Save(_ context.Context, e Entry) (Entry, error) {
@@ -46,7 +49,8 @@ func (f *fakeStore) Save(_ context.Context, e Entry) (Entry, error) {
 		return Entry{}, assertErr("save failed")
 	}
 	if e.ID == "" {
-		e.ID = "fake_id"
+		f.nextID++
+		e.ID = fmt.Sprintf("fake_id_%d", f.nextID)
 	}
 	e.CreatedAt = time.Now()
 	e.UpdatedAt = e.CreatedAt
@@ -83,11 +87,8 @@ func (f *fakeStore) List(_ context.Context, tag string) ([]Entry, error) {
 	}
 	out := []Entry{}
 	for _, e := range f.entries {
-		for _, t := range e.Tags {
-			if t == tag {
-				out = append(out, e)
-				break
-			}
+		if slices.Contains(e.Tags, tag) {
+			out = append(out, e)
 		}
 	}
 	return out, nil
@@ -118,7 +119,7 @@ func TestMemoryTool_SaveHappyPath(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(res.Output), &ar))
 	assert.True(t, ar.Success)
 	assert.Equal(t, "memory", ar.Target)
-	assert.Equal(t, "fake_id", ar.ID)
+	assert.Equal(t, "fake_id_1", ar.ID)
 	assert.Contains(t, ar.Message, "user likes terse output")
 
 	require.Len(t, store.entries, 1)
