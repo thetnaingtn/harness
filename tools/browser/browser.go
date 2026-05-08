@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -453,7 +454,19 @@ func (t *BrowserTool) reapIdleSessions() {
 
 // launchBrowser starts a fresh Chrome and returns its task context plus a
 // teardown function that closes both the task and the underlying allocator.
+//
+// Each launch gets its own user-data-dir created up-front so the path is
+// known to both Chrome (it appears in argv as --user-data-dir=…) and the
+// reaper watchdog. If the parent dies hard before cleanup runs, the
+// watchdog SIGKILLs any process whose argv contains that path and rm -rfs
+// the dir.
 func launchBrowser(parent context.Context) (context.Context, context.CancelFunc, error) {
+	udd, err := os.MkdirTemp("", "harness-browser-")
+	if err != nil {
+		return nil, nil, fmt.Errorf("create user-data-dir: %w", err)
+	}
+	trackDirForReaping(udd)
+
 	allocCtx, allocCancel := chromedp.NewExecAllocator(parent,
 		append(chromedp.DefaultExecAllocatorOptions[:],
 			chromedp.NoSandbox,
@@ -461,6 +474,7 @@ func launchBrowser(parent context.Context) (context.Context, context.CancelFunc,
 			chromedp.UserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"),
 			chromedp.Flag("disable-blink-features", "AutomationControlled"),
 			chromedp.Flag("lang", "en-US"),
+			chromedp.UserDataDir(udd),
 		)...,
 	)
 	taskCtx, taskCancel := chromedp.NewContext(allocCtx)
@@ -474,11 +488,15 @@ func launchBrowser(parent context.Context) (context.Context, context.CancelFunc,
 	); err != nil {
 		taskCancel()
 		allocCancel()
+		untrackDirForReaping(udd)
+		_ = os.RemoveAll(udd)
 		return nil, nil, err
 	}
 	cleanup := func() {
 		taskCancel()
 		allocCancel()
+		untrackDirForReaping(udd)
+		_ = os.RemoveAll(udd)
 	}
 	return taskCtx, cleanup, nil
 }
