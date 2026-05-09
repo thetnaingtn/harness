@@ -199,6 +199,7 @@ self-contained `main.go` you can `go run`:
 | [`data-agent/`](./examples/data-agent) | BYO custom tools (no `tools/*` deps) hitting Singapore's open-data APIs (`data.gov.sg`). Includes a `//go:build live` smoke test. | `tool.Tool` interface for 5 custom HTTP-backed tools |
 | [`lta-agent/`](./examples/lta-agent) | Same shape as data-agent, talks to LTA Datamall. Demonstrates `IsConcurrencySafe=true` for parallel HTTP fanout. | Custom tools + parallel dispatch via `MaxToolConcurrency` |
 | [`support-agent/`](./examples/support-agent) | Mock customer-support agent showing **`SkillProvider` + `PermissionChecker` + `LifecycleHooks`** wired together. KB articles via `//go:embed`; supervisor-mode gating; JSONL audit log. Closest to a real product. | All of the above, plus `runtime.SkillProvider`, `tool.PermissionChecker`, `runtime.LifecycleHooks` (`AfterToolUse` + `OnStop`) |
+| [`self-improving-agent/`](./examples/self-improving-agent) | Wires `tool/memory` + `tool/skills` + `runtime.Review` end-to-end. The agent curates its own memory and skill library at end of every turn via `LifecycleHooks.OnStop`. Storage at `~/.harness/self-improving-agent/`. | `memory.MemoryTool`, `skills.SkillTool`, `runtime.Review`, `LifecycleHooks.OnStop` |
 
 To run any of them:
 
@@ -235,10 +236,11 @@ none of it.
 
 ## Components
 
-A general agent harness has ~13 conceptual components: the loop, the
+A general agent harness has ~16 conceptual components: the loop, the
 model invocation layer, the tool registry, permission gating,
 context/compaction, the system prompt, sub-agents, hooks, MCP, skills,
-session persistence, UI, and entrypoints. harness implements the
+session persistence, writable memory, writable skills, a
+self-improvement reviewer, UI, and entrypoints. harness implements the
 in-process, library-shaped subset of those. The rest is left to the
 caller — you own the binary, you own the UI, you own the channel.
 
@@ -255,11 +257,14 @@ caller — you own the binary, you own the UI, you own the channel.
 | 9 | **MCP** | `tools/mcp` package: `mcp.Connect(ctx, ServerConfig)` adapts an external MCP server's tools as `tool.Tool`s. Declare `AgentSpec.MCPServers` for auto-wiring; `Runtime.Close()` releases sessions |
 | 10 | **Skills** | `runtime.SkillProvider` (`FormatIndex` + `Get`); auto-registers `load_skill` so the model can pull a skill on demand. See `examples/support-agent/` for a `//go:embed kb/*.md` example |
 | 11 | **Session persistence** | `session.Session` (in-memory, append-only) + optional `session.Store` for JSONL persistence and cross-process resume |
+| 12 | **Writable memory** | `tool/memory` package: `MemoryStore` interface, `MemoryTool` (action-discriminated), JSONL on-disk default. Wraps any backend; `*jsonl.Store` doubles as a `runtime.MemoryProvider`. |
+| 13 | **Writable skills** | `tool/skills` package: `SkillStore` interface, `SkillTool` (six actions: create/patch/replace/remove/list/get), directory-on-disk default. Patch supports surgical string-match with three error categories. |
+| 14 | **Self-improvement reviewer** | `runtime.Review` — one-shot reviewer Runtime against a finished session. Designed to be called from `LifecycleHooks.OnStop` in a goroutine. Snapshots parent's session; shares Memory/Skills writes; recursion guard via `AgentID = "__review__"`. |
 
 Deliberately not in scope (numbers from the same conceptual list):
 
-- **12 — UI**: harness emits events; the caller renders.
-- **13 — Entrypoints**: harness is a library. There is no `harness`
+- **15 — UI**: harness emits events; the caller renders.
+- **16 — Entrypoints**: harness is a library. There is no `harness`
   binary. The example agents in `examples/` show how a binary is
   assembled.
 
