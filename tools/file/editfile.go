@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+
 	"github.com/sausheong/harness/tool"
 )
 
@@ -61,6 +63,9 @@ func (t *EditFileTool) Execute(_ context.Context, input json.RawMessage) (tool.T
 	}
 
 	in.Path = tool.ExpandHome(in.Path)
+	if t.WorkDir != "" && !filepath.IsAbs(in.Path) {
+		in.Path = filepath.Join(t.WorkDir, in.Path)
+	}
 	in.Path = tool.ResolveExistingPath(in.Path)
 
 	if t.WorkDir != "" {

@@ -56,6 +56,9 @@ func (t *WriteFileTool) Execute(_ context.Context, input json.RawMessage) (tool.
 	}
 
 	in.Path = tool.ExpandHome(in.Path)
+	if t.WorkDir != "" && !filepath.IsAbs(in.Path) {
+		in.Path = filepath.Join(t.WorkDir, in.Path)
+	}
 
 	if t.WorkDir != "" {
 		if err := tool.ValidatePathInWorkDir(in.Path, t.WorkDir); err != nil {
